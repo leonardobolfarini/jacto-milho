@@ -1,4 +1,30 @@
-<!DOCTYPE html>
+import pandas as pd
+import json
+
+te = pd.read_csv('input/traps_events.csv', sep=';', on_bad_lines='skip', low_memory=False)
+tl = pd.read_csv('input/traps_list.csv', sep=';', on_bad_lines='skip')
+
+trap_col = 'trapId' if 'trapId' in te.columns else 'trap_id' if 'trap_id' in te.columns else 'id'
+
+# Remove espaços, unifica CAIXA ALTA e remove Ids soltos que apontavam pra mesma armadilha
+tl['code'] = tl['code'].astype(str).str.strip().str.upper()
+tl = tl.drop_duplicates(subset=['id'], keep='last')
+
+te['pestCount'] = pd.to_numeric(te['pestCount'], errors='coerce').fillna(0)
+df1 = te.groupby(trap_col)['pestCount'].sum().reset_index()
+
+df2 = pd.merge(df1, tl[['id', 'code']], left_on=trap_col, right_on='id', how='inner')
+df_final = df2.groupby('code')['pestCount'].sum().reset_index()
+
+# Limpar se houver codes inúteis
+df_final = df_final[df_final['code'] != 'NAN']
+
+df_final = df_final.sort_values('pestCount', ascending=False).head(15)
+
+labels = json.dumps(df_final['code'].tolist())
+data = json.dumps(df_final['pestCount'].tolist())
+
+html_content = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -8,15 +34,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { margin: 0; padding: 2rem; font-family: 'Inter', sans-serif; background: #0f172a; color: #fff; }
-        .container { max-width: 1200px; margin: auto; display: grid; gap: 2rem; grid-template-columns: 1fr 1fr; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4); }
-        .card h2 { margin-top: 0; font-size: 1.25rem; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }
-        .chart-container { position: relative; height: 300px; width: 100%; margin-top: 1rem; }
-        .full-width { grid-column: 1 / -1; }
-        .highlight { color: #f97316; font-weight: bold; }
-        .insight { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1rem; margin-top: 1rem; border-radius: 4px; line-height: 1.5; color: #e2e8f0; font-size: 0.95rem; }
-        .alert-insight { background: rgba(244, 63, 94, 0.1); border-left: 4px solid #f43f5e; }
+        body {{ margin: 0; padding: 2rem; font-family: 'Inter', sans-serif; background: #0f172a; color: #fff; }}
+        .container {{ max-width: 1200px; margin: auto; display: grid; gap: 2rem; grid-template-columns: 1fr 1fr; }}
+        .card {{ background: #1e293b; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4); }}
+        .card h2 {{ margin-top: 0; font-size: 1.25rem; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 0.5rem; }}
+        .chart-container {{ position: relative; height: 300px; width: 100%; margin-top: 1rem; }}
+        .full-width {{ grid-column: 1 / -1; }}
+        .highlight {{ color: #f97316; font-weight: bold; }}
+        .insight {{ background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; padding: 1rem; margin-top: 1rem; border-radius: 4px; line-height: 1.5; color: #e2e8f0; font-size: 0.95rem; }}
+        .alert-insight {{ background: rgba(244, 63, 94, 0.1); border-left: 4px solid #f43f5e; }}
     </style>
 </head>
 
@@ -82,12 +108,12 @@
 
     <script>
         // Chart 1: Explosão Temporal vs Spray (Line/Bar Combo)
-        new Chart(document.getElementById('chartExplosion'), {
+        new Chart(document.getElementById('chartExplosion'), {{
             type: 'line',
-            data: {
+            data: {{
                 labels: ['15/Nov', '18/Nov', '21/Nov', '24/Nov', '28/Nov', '01/Dez', '04/Dez', '07/Dez', '10/Dez', '15/Dez'],
                 datasets: [
-                    {
+                    {{
                         type: 'line',
                         label: 'Pragas Detectadas na Armadilha (Contagem)',
                         data: [15, 23, 30, 89, 450, 410, 201, 105, 120, 150], 
@@ -98,111 +124,117 @@
                         fill: true,
                         tension: 0.4,
                         yAxisID: 'y'
-                    },
-                    {
+                    }},
+                    {{
                         type: 'bar',
                         label: 'Densidade de Pulverização (Nº Passadas na Área)',
                         data: [5, 10, 8, 2, 0, 15, 120, 140, 50, 10], 
                         backgroundColor: '#3b82f6',
                         borderRadius: 4,
                         yAxisID: 'y1'
-                    }
+                    }}
                 ]
-            },
-            options: {
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    x: { grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
-                    y: {
+                interaction: {{ mode: 'index', intersect: false }},
+                scales: {{
+                    x: {{ grid: {{ color: '#334155' }}, ticks: {{ color: '#cbd5e1' }} }},
+                    y: {{
                         type: 'linear', display: true, position: 'left',
-                        title: { display: true, text: 'Contagem de Insetos', color: '#f97316' },
-                        grid: { color: '#334155' }, ticks: { color: '#cbd5e1' }
-                    },
-                    y1: {
+                        title: {{ display: true, text: 'Contagem de Insetos', color: '#f97316' }},
+                        grid: {{ color: '#334155' }}, ticks: {{ color: '#cbd5e1' }}
+                    }},
+                    y1: {{
                         type: 'linear', display: true, position: 'right',
-                        title: { display: true, text: 'Trânsito do Pulverizador', color: '#3b82f6' },
-                        grid: { drawOnChartArea: false }, ticks: { color: '#cbd5e1' }
-                    }
-                },
-                plugins: {
-                    legend: { labels: { color: '#fff' } },
-                    tooltip: { backgroundColor: 'rgba(15, 23, 42, 0.9)' }
-                }
-            }
-        });
+                        title: {{ display: true, text: 'Trânsito do Pulverizador', color: '#3b82f6' }},
+                        grid: {{ drawOnChartArea: false }}, ticks: {{ color: '#cbd5e1' }}
+                    }}
+                }},
+                plugins: {{
+                    legend: {{ labels: {{ color: '#fff' }} }},
+                    tooltip: {{ backgroundColor: 'rgba(15, 23, 42, 0.9)' }}
+                }}
+            }}
+        }});
 
         // Chart 2: Desperdício de Operação
-        new Chart(document.getElementById('chartDesperdicio'), {
+        new Chart(document.getElementById('chartDesperdicio'), {{
             type: 'doughnut',
-            data: {
+            data: {{
                 labels: ['Produtivo (Dentro dos Talhões)', 'Falso (Fora da Área)'],
-                datasets: [{
+                datasets: [{{
                     data: [29135, 52543],
                     backgroundColor: ['#10b981', '#f43f5e'],
                     borderWidth: 0,
                     hoverOffset: 6
-                }]
-            },
-            options: {
+                }}]
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom', labels: { color: '#fff' } }
-                }
-            }
-        });
+                plugins: {{
+                    legend: {{ position: 'bottom', labels: {{ color: '#fff' }} }}
+                }}
+            }}
+        }});
 
         // Chart 3: Ponto Cego Tecnológico
-        new Chart(document.getElementById('chartPontoCego'), {
+        new Chart(document.getElementById('chartPontoCego'), {{
             type: 'bar',
-            data: {
+            data: {{
                 labels: ['Grão 4.0', 'Silagem 4.0', 'Grão Conv. (Vermelho)', 'Silagem Conv. (Vermelho)'],
-                datasets: [{
+                datasets: [{{
                     label: 'Armadilhas MIIP Alocadas Geograficamente',
                     data: [19, 15, 0, 0],
                     backgroundColor: ['#3b82f6', '#3b82f6', '#475569', '#475569'],
                     borderRadius: 6
-                }]
-            },
-            options: {
+                }}]
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#cbd5e1', stepSize: 5 } },
-                    x: { grid: { display: false }, ticks: { color: '#cbd5e1' } }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
+                scales: {{
+                    y: {{ beginAtZero: true, grid: {{ color: '#334155' }}, ticks: {{ color: '#cbd5e1', stepSize: 5 }} }},
+                    x: {{ grid: {{ display: false }}, ticks: {{ color: '#cbd5e1' }} }}
+                }},
+                plugins: {{
+                    legend: {{ display: false }}
+                }}
+            }}
+        }});
 
         // Chart 4: Gaps de Pulverização (Code vs Count)
-        new Chart(document.getElementById('chartGaps'), {
+        new Chart(document.getElementById('chartGaps'), {{
             type: 'bar',
-            data: {
-                labels: ["CIGARRINHA0749", "CIGARRINHA4", "CIGARRINHA1", "CIGARRINHA2", "CIGARRINHA2554", "CIGARRINHA1654", "CIGARRINHA3", "3,5721E+14", "FARMLAB2", "FARMLAB1", "FARMLAB4", "FARMLAB3"],
-                datasets: [{
+            data: {{
+                labels: {labels},
+                datasets: [{{
                     label: 'Volume Acumulado de Pragas Identificadas',
-                    data: [1064.0, 952.0, 867.0, 773.0, 730.0, 682.0, 674.0, 304.0, 254.0, 73.0, 52.0, 47.0],
+                    data: {data},
                     backgroundColor: '#f97316',
                     borderRadius: 4
-                }]
-            },
-            options: {
+                }}]
+            }},
+            options: {{
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#cbd5e1' } },
-                    x: { grid: { display: false }, ticks: { color: '#cbd5e1', autoSkip: false, maxRotation: 45, minRotation: 45 } }
-                },
-                plugins: {
-                    legend: { labels: { color: '#fff' } }
-                }
-            }
-        });
+                scales: {{
+                    y: {{ beginAtZero: true, grid: {{ color: '#334155' }}, ticks: {{ color: '#cbd5e1' }} }},
+                    x: {{ grid: {{ display: false }}, ticks: {{ color: '#cbd5e1', autoSkip: false, maxRotation: 45, minRotation: 45 }} }}
+                }},
+                plugins: {{
+                    legend: {{ labels: {{ color: '#fff' }} }}
+                }}
+            }}
+        }});
     </script>
 </body>
 </html>
+"""
+
+with open('graficos_comprovacao.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("HTML rebuild success")
