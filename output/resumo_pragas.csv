@@ -1,0 +1,3 @@
+primaryPest,armadilhas_monitoradas,leituras_totais,media_pesticidas,max_pesticidas,pct_acima_control,pct_acima_damage,pct_crescente,eficacia_missao_media,max_surtos_consecutivos,limiar_alerta,limiar_controle,limiar_dano,peso_dano
+Cigarrinha,11,20,66.15,141.0,59.3,33.3,59.3,55.1,3,10,30,60,4
+Lagarta Spodoptera,13,28,4.32,35.0,18.2,12.1,30.3,25.5,2,2,4,8,5

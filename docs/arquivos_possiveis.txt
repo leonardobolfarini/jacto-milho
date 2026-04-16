@@ -1,0 +1,489 @@
+Arquivos
+Arquivo	Formato	Descrição
+LAYER_MAP_ALARM.csv	CSV	Polígonos de adubação com dose real vs. configurada (kg/ha)
+LAYER_MAP_FERTILIZATION.csv	CSV	Polígonos de plantio com população de plantas (hab/ha)
+LAYER_MAP_PLANTING.csv	CSV	Polígonos de colheita com produtividade, peso e umidade
+LAYER_MAP_GRAIN_HARVESTING.csv	CSV	Linhas de pressão de pulverização (psi) por segmento
+LAYER_MAP_SPRAY_PRESSURE.csv	CSV	Pontos de alarme de sensores e atuadores das máquinas
+LAYER_MAP_PARAMETERIZED_ALERT.csv	CSV	Alertas parametrizados com valor, duração e motivo de parada
+LAYER_MAP_STOP_REASON.csv	CSV	Paradas de máquinas com duração (h) e tipo de evento
+LAYER_MAP_ENGINE_ROTATION.csv	CSV	Speed, State, Overlap, Engine Rotation/Temperature, Fuel, Schedule, Telemetry Comm.
+LAYER_MAP_ENGINE_TEMPERATURE.csv	CSV	Temperatura do fluido de arrefecimento do motor em °C (297.893 registros)
+LAYER_MAP_FUEL_CONSUMPTION.csv	CSV	Taxa de consumo instantâneo de combustível em L/h (297.893 registros)
+LAYER_MAP_OVERLAP.csv	CSV	Polígonos de sobreposição entre passadas consecutivas em hectares (56.008 registros)
+LAYER_MAP_SPEED.csv	CSV	Velocidade instantânea da máquina em km/h por segmento GPS (329.450 registros)
+LAYER_MAP_STATE.csv	CSV	Estado operacional da máquina por segmento: trabalhando, translado, parada (299.264 registros)
+LAYER_MAP_SCHEDULE.csv	CSV	Malha de agendamento de operações — 9 colunas comuns, sem coluna extra (329.450 registros)
+LAYER_MAP_TELEMETRY_COMMUNICATION.csv	CSV	Status do link telemétrico com flags de GPS externo e pacotes inválidos (336.693 registros)
+
+Schema de colunas
+Coluna	Tipo	Descrição
+geometry	WKT string	Geometria georreferenciada em WKT. Pode ser POINT, LINESTRING/MULTILINESTRING ou POLYGON/MULTIPOLYGON. CRS: WGS84.
+Timestamp	float64	Data/hora como timestamp Unix em segundos com fração (ex: 1762805012.4). Converter: datetime.utcfromtimestamp(ts).
+Date Time	string	Data e hora local no formato DD/MM/YYYY HH:MM:SS (UTC−3, Marília–SP). Derivado do Timestamp.
+Machine Name	string	Nome completo da máquina. Atenção: em LAYER_MAP_SPRAY_PRESSURE este campo aparece como "MachineName" (sem espaço).
+Service Order	int	ID da ordem de serviço. Chave para cruzar registros de uma mesma OS entre camadas diferentes.
+Operator Number	int	ID numérico do operador no sistema EKOS.
+Operator Name	string	Nome completo do operador responsável.
+Operation	string	Tipo de operação agrícola. Atenção: em LAYER_MAP_FERTILIZATION este campo aparece como "operation" (inicial minúscula).
+Team	string	Equipe executora da operação.
+Alarm	string	[ALARM] Texto descritivo do alarme do computador de bordo.
+Area - ha	float64	[FERTILIZATION · PLANTING · GRAIN_HARVESTING] Área do polígono em hectares.
+AppliedDos - kg/ha	float64	[FERTILIZATION] Dose real aplicada em kg/ha pelo sensor de fluxo ou pesagem embarcada.
+Configured - kg/ha	float64	[FERTILIZATION] Dose alvo da prescrição em kg/ha. Desvio de AppliedDos indica não-conformidade.
+Weight - kg	float64	[FERTILIZATION · GRAIN_HARVESTING] Peso do insumo aplicado ou grãos colhidos no polígono em kg.
+Population - ha	float64	[PLANTING] Densidade de plantas em plantas/ha. 0.0 = segmento de manobra sem semeadura.
+Yield - kg/ha	float64	[GRAIN_HARVESTING] Produtividade em kg/ha. 0.0 = polígono de manobra.
+Humidity - %	float64	[GRAIN_HARVESTING] Umidade do grão em % medida pelo sensor embarcado.
+Pressure - psi	float64	[SPRAY_PRESSURE] Pressão da barra em PSI. 0 = bico fechado ou seção desligada.
+Alert	string	[PARAMETERIZED_ALERT] Nome do parâmetro configurável que disparou o alerta.
+Duration	float64	[PARAMETERIZED_ALERT] Tempo em segundos que o parâmetro permaneceu fora dos limites.
+Reason for stopping	string	[PARAMETERIZED_ALERT] Motivo de parada vinculado ao alerta (pode ser vazio).
+Valor	float64	[PARAMETERIZED_ALERT] Valor numérico que disparou o alerta (ex: 1714.0 rpm).
+Duration - h	float64	[STOP_REASON] Duração da parada em horas. Permite calcular tempo de improdutividade por operação.
+event	string	[STOP_REASON] Categoria do evento de parada.
+EngineRotation - rpm	float64	[ENGINE_ROTATION] Rotação instantânea do motor em RPM.
+EngineTemperature - °C	float64	[ENGINE_TEMPERATURE] Temperatura do fluido de arrefecimento do motor em °C.
+FuelConsumption - L/h	float64	[FUEL_CONSUMPTION] Taxa de consumo instantâneo de combustível em L/h.
+OverlapArea - ha	float64	[OVERLAP] Área de sobreposição entre passadas consecutivas em hectares.
+Speed - km/h	float64	[SPEED] Velocidade instantânea da máquina em km/h medida pelo GPS embarcado.
+MachineState	string	[STATE] Estado operacional da máquina (trabalhando, em translado, parada, aguardando).
+TelemetryCommunication	string	[TELEMETRY_COMMUNICATION] Status do link telemétrico entre a máquina e os servidores EKOS.
+InvalidCommunication	int/bool	[TELEMETRY_COMMUNICATION] Flag ou contador de pacotes inválidos/corrompidos.
+ExternalGPS	bool	[TELEMETRY_COMMUNICATION] Indica se o GPS veio de receptor externo (True) ou do módulo embarcado (False).
+
+Arquivos
+Arquivo	Formato	Descrição
+fields.csv	CSV	Talhões com geometria WKT, centroide, datas de vigência e cor (4 registros)
+machines.csv	CSV	Máquinas com tipo, modelo, marca, serial e offsets de GPS (3 registros)
+operators.csv	CSV	Operadores habilitados com número de identificação e foto (7 registros)
+implements.csv	CSV	Implementos agrícolas com tipo e sistema de aplicação (4 registros)
+agricultural_inputs.csv	CSV	Insumos agrícolas com classe, unidade, família e grupo (4 registros)
+
+Schema de colunas
+Coluna	Tipo	Descrição
+idField	int	[fields] ID único do talhão. FK para service_orders_fields.
+idFarm	int	[fields] ID da fazenda à qual o talhão pertence.
+fieldName	string	[fields] Nome do talhão cadastrado.
+expirable	bool	[fields] Indica se o talhão possui data de expiração cadastrada.
+fieldColor	int	[fields] Cor de representação no mapa como inteiro decimal RGB (ex: 16777215 = branco #FFFFFF).
+fieldInitDateTime	Unix ts	[fields] Data/hora de início de vigência em timestamp Unix.
+fieldEndDateTime	Unix ts	[fields] Data/hora de encerramento em timestamp Unix (valor alto = sem expiração).
+fieldCreatedAt	Unix ts	[fields] Timestamp de criação do registro.
+fieldUpdatedAt	Unix ts	[fields] Timestamp de última atualização.
+fieldAreaCentroid	JSON	[fields] Centroide: {"type":"Point","coordinates":[lon,lat]}.
+fieldGeom	WKT	[fields] Geometria completa em WKT (POLYGON WGS84). Importável no GeoPandas.
+preExpired	bool	[fields] True quando a expiração está próxima.
+idMachine	int	[machines] ID único da máquina. Join com "Machine Name" das camadas via lookup.
+idBusinessUnit	int	[machines] ID da unidade de negócio à qual a máquina pertence.
+idOperationalCategory	int/null	[machines] ID da categoria operacional; null quando não categorizada.
+machineName	string	[machines] Nome completo — igual ao campo "Machine Name" das camadas.
+machineSerialNumber	string	[machines] Número de série do chassi/motor.
+machineType	string	[machines] Tipo em enum EKOS (ex: MACHINE_TYPE_GRAIN_HARVESTER, MACHINE_TYPE_SPRAYER).
+machineModel	string	[machines] Modelo em enum EKOS (ex: MACHINE_MODEL_NEW_HOLLAND_CR_9060).
+machineBrand	string	[machines] Fabricante em texto livre (ex: New Holland, JACTO).
+machineEnable	bool	[machines] True se a máquina está ativa e disponível para ordens de serviço.
+machineTransfer	bool	[machines] True se a máquina está em processo de transferência entre unidades.
+machineERPCode	string/null	[machines] Código da máquina no ERP da fazenda; null quando não integrado.
+machineCreatedAt	Unix ts	[machines] Timestamp de criação do registro.
+machineUpdatedAt	Unix ts	[machines] Timestamp de última atualização.
+machineGPSOffset_internalGPSOffsetX	float64	[machines] Offset lateral (X) do GPS interno em relação ao ponto de referência da máquina (m).
+machineGPSOffset_internalGPSOffsetY	float64	[machines] Offset longitudinal (Y) do GPS interno (m).
+machineGPSOffset_externalGPSOffsetX	float64	[machines] Offset lateral (X) do GPS externo/RTK (m).
+machineGPSOffset_externalGPSOffsetY	float64	[machines] Offset longitudinal (Y) do GPS externo/RTK (m).
+idOperator	int	[operators] ID único do operador — equivalente ao "Operator Number" das camadas.
+idBusinessUnit	int	[operators] ID da unidade de negócio à qual o operador pertence.
+operatorNumber	int	[operators] Número de identificação do operador (badge).
+operatorName	string	[operators] Nome completo — equivalente ao "Operator Name" das camadas.
+operatorEnable	bool	[operators] True se o operador está ativo.
+operatorCreatedAt	Unix ts	[operators] Timestamp de criação do registro.
+operatorUpdatedAt	Unix ts	[operators] Timestamp de última atualização.
+operatorPhoto	URL/null	[operators] URL da foto do operador (null quando não cadastrada).
+implementNumber	int	[implements] Número de identificação do implemento.
+implementName	string	[implements] Nome curto do implemento (ex: "Adubadora", "Plantadeira").
+implementEnable	bool	[implements] True se o implemento está ativo.
+implementModelName	string	[implements] Nome completo do modelo (ex: "Adubadora JFDOUBLE DISC 13", "Tellus 10000 NPK").
+implementModelNumber	int	[implements] ID numérico do modelo no catálogo EKOS.
+implementType_implementTypeName	string	[implements] Categoria em texto (ex: ADUBADOR, SEMEADOR, PULVERIZADOR).
+implementType_implementTypeEnum	string	[implements] Categoria em enum EKOS (ex: TRACTOR_IMPLEMENT_FERTILIZER, TRACTOR_IMPLEMENT_SPRAYER).
+implementApSystem_implementApSystemEnum	string	[implements] Sistema de aplicação em enum EKOS (ex: IMPLEMENT_GENERIC_FERTILIZER, IMPLEMENT_LIQUID).
+id_agricultural_input	int	[agricultural_inputs] ID único do insumo.
+agricultural_input_number	int	[agricultural_inputs] Número de identificação do insumo no cadastro.
+agricultural_input_name	string	[agricultural_inputs] Nome do insumo (ex: "CALCÁRIO", "DKB358PRO4").
+agricultural_input_brand	string	[agricultural_inputs] Marca/fornecedor (ex: "GUAPIARA", "DEKALB").
+agricultural_input_class	string	[agricultural_inputs] Classe do insumo (ex: DOLOMITICO, KCL, NPK, SEMEADURA).
+agricultural_input_unit	string	[agricultural_inputs] Unidade em enum EKOS (ex: MEASURE_UNIT_KILOGRAM, MEASURE_UNIT_LITER).
+agricultural_input_enable	bool	[agricultural_inputs] True se o insumo está ativo.
+agricultural_input_family	string	[agricultural_inputs] Família do insumo (pode ser vazio).
+agricultural_input_group	string	[agricultural_inputs] Grupo do insumo (ex: CORRETIVO DE SOLO, SEMEADURA).
+__typename	string	[agricultural_inputs] Tipo GraphQL fixo: sempre "AgriculturalInput". Artefato da exportação via API.
+
+Arquivos
+Arquivo	Formato	Descrição
+service_orders.csv	CSV	OSs com 30 colunas: operação agrícola, equipe, prescrição, datas e configurações (29 registros)
+service_orders_alerts.csv	CSV	Alertas parametrizados vinculados a cada OS com período de ocorrência (32 registros)
+service_orders_alerts_rules.csv	CSV	Regras dos alertas: ALERT_OPERATING_SPEED e ALERT_ENGINE_TEMPERATURE com min/max/variação (8 registros)
+service_orders_fields.csv	CSV	Talhões associados a cada OS com centroide lat/lon e datas de vigência (30 registros)
+
+Schema de colunas
+Coluna	Tipo	Descrição
+idServiceOrder	int	[service_orders] ID único da OS — FK para todas as camadas via campo "Service Order".
+idBusinessUnit	int	[service_orders] ID da unidade de negócio (fazenda) no EKOS.
+idWorkingDay	int/null	[service_orders] ID do dia de trabalho associado; vazio quando não vinculado.
+serviceOrderNumber	int	[service_orders] Número sequencial da OS visível no EKOS.
+serviceOrderDate	Unix ts	[service_orders] Data de referência da OS em timestamp Unix (segundos).
+serviceOrderFlowStandDose	float/null	[service_orders] Dose padrão de fluxo configurada para a OS; null quando não aplicável.
+serviceOrderUnit	string/null	[service_orders] Unidade de medida do insumo (ex: kg/ha, L/ha); null quando não aplicável.
+serviceOrderNozzleType	string/null	[service_orders] Tipo de bico de pulverização configurado; null quando não é OS de pulverização.
+serviceOrderPrescription	string	[service_orders] Modo de aplicação: TAXA VARIAVEL | TAXA FIXA | sem prescrição.
+serviceOrderEnable	bool	[service_orders] True se a OS está ativa/válida.
+serviceOrderStartAt	Unix ts	[service_orders] Data/hora de início da OS em timestamp Unix.
+serviceOrderEndAt	Unix ts/null	[service_orders] Data/hora de encerramento em timestamp Unix; null se ainda aberta.
+serviceOrderCreatedAt	Unix ts	[service_orders] Timestamp de criação do registro no EKOS.
+serviceOrderUpdatedAt	Unix ts	[service_orders] Timestamp da última atualização do registro.
+idAgriculturalOperation_idAgriculturalOperation	int	[service_orders] ID da operação agrícola vinculada à OS.
+idAgriculturalOperation_idAgriculturalActivity	int	[service_orders] ID da atividade agrícola dentro da operação.
+idAgriculturalOperation_agriculturalOperationNumber	int	[service_orders] Número sequencial da operação agrícola.
+idAgriculturalOperation_agriculturalOperationName	string	[service_orders] Nome da operação agrícola (ex: CALAGEM, PLANTIO, PULVERIZAÇÃO HERBICIDA).
+idAgriculturalOperation_agriculturalOperationAlertRuleList	JSON	[service_orders] Lista JSON de IDs de regras de alerta associadas à operação. "[]" quando sem alertas.
+idAgriculturalOperation_agriculturalOperationEnable	bool	[service_orders] True se a operação agrícola está ativa.
+idAgriculturalOperation_agriculturalOperationCreatedAt	Unix ts	[service_orders] Timestamp de criação da operação agrícola.
+idAgriculturalOperation_agriculturalOperationUpdatedAt	Unix ts	[service_orders] Timestamp de atualização da operação agrícola.
+idTeam_idTeam	int	[service_orders] ID único da equipe executora.
+idTeam_idBusinessUnit	int	[service_orders] ID da unidade de negócio à qual a equipe pertence.
+idTeam_teamNumber	int	[service_orders] Número de identificação da equipe.
+idTeam_teamName	string	[service_orders] Nome da equipe (ex: "UNIMAR ADUBAÇÃO", "UNIMAR PLANTIO").
+idTeam_teamUnit	string	[service_orders] Unidade da equipe (ex: "UNIMAR CAMPUS").
+idTeam_teamEnable	bool	[service_orders] True se a equipe está ativa.
+idTeam_teamCreatedAt	Unix ts	[service_orders] Timestamp de criação da equipe.
+idTeam_teamUpdatedAt	Unix ts	[service_orders] Timestamp de última atualização da equipe.
+idAlertRule	int	[service_orders_alerts] ID único do alerta disparado.
+idServiceOrder	int	[service_orders_alerts] FK para service_orders.idServiceOrder.
+alertRuleInitDateTime	Unix ts	[service_orders_alerts] Início do período em que o alerta esteve ativo (timestamp Unix).
+alertRuleEndDateTime	Unix ts	[service_orders_alerts] Fim do período de alerta (timestamp Unix). Valor alto = sem fim definido.
+alertRuleUser	string	[service_orders_alerts] Usuário que reconheceu o alerta (vazio quando automático).
+alertRuleDescription	string	[service_orders_alerts] Texto descritivo do alerta parametrizado.
+alertRuleCreatedAt	Unix ts	[service_orders_alerts] Timestamp de criação do registro de alerta.
+alertRuleUpdatedAt	Unix ts	[service_orders_alerts] Timestamp de última atualização do registro.
+alert	string	[service_orders_alerts_rules] Tipo de alerta: ALERT_OPERATING_SPEED | ALERT_ENGINE_TEMPERATURE.
+minValue	float64	[service_orders_alerts_rules] Valor mínimo do parâmetro para disparo.
+maxValue	float64	[service_orders_alerts_rules] Valor máximo do parâmetro para disparo.
+variationValue	float64	[service_orders_alerts_rules] Variação tolerada antes de disparar o alerta.
+idAlertRule	int	[service_orders_alerts_rules] FK para service_orders_alerts.idAlertRule.
+idServiceOrder	int	[service_orders_alerts_rules] FK para service_orders.idServiceOrder.
+idField	int	[service_orders_fields] ID do talhão — FK para ekos_cadastros.fields.idField.
+idFarm	int	[service_orders_fields] ID da fazenda.
+fieldName	string	[service_orders_fields] Nome do talhão (ex: "Silagem 4.0 - 8,5 ha").
+fieldColor	int	[service_orders_fields] Cor do talhão em decimal RGB (ex: 16777215 = branco #FFFFFF).
+fieldInitDateTime	Unix ts	[service_orders_fields] Início de vigência do talhão em timestamp Unix.
+fieldEndDateTime	Unix ts	[service_orders_fields] Fim de vigência do talhão em timestamp Unix.
+fieldCreatedAt	Unix ts	[service_orders_fields] Timestamp de criação do registro.
+fieldUpdatedAt	Unix ts	[service_orders_fields] Timestamp de última atualização.
+idServiceOrder	int	[service_orders_fields] FK para service_orders.idServiceOrder.
+fieldAreaCentroid_longitude	float64	[service_orders_fields] Longitude WGS84 do centroide do talhão.
+fieldAreaCentroid_latitude	float64	[service_orders_fields] Latitude WGS84 do centroide do talhão.
+
+Arquivos
+Arquivo	Formato	Descrição
+stop_reasons.csv	CSV	24 motivos de parada com tipo, cor, flag produtivo e flag considerar motor desligado
+stop_reasons_activities.csv	CSV	Atividades agrícolas vinculadas a cada motivo de parada (19 registros)
+Acesso restrito. Faça login no OneDrive com e-mail @unimar.br. Acessar via OneDrive ↗
+Schema de colunas
+Coluna	Tipo	Descrição
+idStopReason	int	[stop_reasons] ID único do motivo — FK para o campo "event" de LAYER_MAP_STOP_REASON.
+idBusinessUnit	int	[stop_reasons] ID da unidade de negócio.
+stopReasonNumber	int	[stop_reasons] Número de identificação do motivo de parada.
+stopReasonName	string	[stop_reasons] Nome do motivo (ex: "ABASTECIMENTO DE INSUMOS", "MANUTENÇÃO PREVENTIVA").
+stopReasonType	string	[stop_reasons] Categoria em enum EKOS (ex: EVENT_TYPE_PRODUCTIVE, EVENT_TYPE_MAINTENANCE).
+stopReasonColor	int	[stop_reasons] Cor de representação no mapa cronológico como inteiro decimal RGB (ex: 8321456).
+stopReasonProductive	bool	[stop_reasons] True se a parada é considerada produtiva (ex: abastecimento necessário).
+stopReasonConsiderMachineOff	bool	[stop_reasons] True se o motor deve ser computado como desligado durante este motivo.
+stopReasonEnable	bool	[stop_reasons] True se o motivo está ativo e pode ser selecionado pelo operador.
+stopReasonCreatedAt	Unix ts	[stop_reasons] Timestamp de criação do registro.
+stopReasonUpdatedAt	Unix ts	[stop_reasons] Timestamp de última atualização.
+idAgriculturalActivity	int	[stop_reasons_activities] ID único da atividade agrícola.
+idBusinessUnit	int	[stop_reasons_activities] ID da unidade de negócio.
+agriculturalActivityNumber	int	[stop_reasons_activities] Número de identificação da atividade.
+agriculturalActivityName	string	[stop_reasons_activities] Nome da atividade (ex: "PLANTIO MILHO SILAGEM", "PULVERIZAÇÃO HERBICIDA").
+agriculturalActivityEnable	bool	[stop_reasons_activities] True se a atividade está ativa.
+agriculturalActivityCreatedAt	Unix ts	[stop_reasons_activities] Timestamp de criação do registro.
+agriculturalActivityUpdatedAt	Unix ts	[stop_reasons_activities] Timestamp de última atualização.
+idStopReason	int	[stop_reasons_activities] FK para stop_reasons.idStopReason.
+
+Arquivos
+Arquivo	Formato	Descrição
+pest_list.csv	CSV	Catálogo de 88 pragas com limiares de alerta, controle e dano por cultura
+pest_details.csv	CSV	Detalhes agronômicos, sintomas, dias de feromônio e imagens de cada praga
+traps_list.csv	CSV	Cadastro das 34 armadilhas ativas com GPS, tipo e status
+traps_data.csv	CSV	Leituras das armadilhas: contagem de insetos e nível de infestação
+traps_events.csv	CSV	Eventos: capturas fotográficas, detecções por IA e telemetria IoT (2.295 eventos)
+Acesso restrito. Faça login no OneDrive com e-mail @unimar.br. Acessar via OneDrive ↗
+Schema de colunas
+Coluna	Tipo	Descrição
+MIIP_PEST_ID	int	[pest_list] ID único da praga no catálogo MIIP. Chave para join com pest_details.
+MIIP_PEST_CLASSIFICATION	string	[pest_list] Classificação taxonômica da praga (ex: Inseto, Ácaro).
+MIIP_PEST_NAME_POPULAR	string	[pest_list] Nome popular (ex: Lagarta Spodoptera, Percevejo Marrom).
+MIIP_PEST_NAME_SCIENTIFIC	string	[pest_list] Nome científico com autoridade (ex: Spodoptera spp., Euschistus heros).
+MIIP_PEST_CULTURE	string	[pest_list] Cultura afetada pela praga (ex: Milho, Soja, Tomate, Citrus, Algodão, Uva).
+MIIP_PEST_PHEROMONES	string	[pest_list] Nome(s) do(s) feromônio(s) compatíveis com a armadilha.
+MIIP_PEST_ALERT	int	[pest_list] Limiar de alerta — número de insetos/armadilha/período que exige atenção agronômica.
+MIIP_PEST_CONTROL	int	[pest_list] Limiar de controle — número que recomenda aplicação de defensivo.
+MIIP_PEST_DAMAGE	int	[pest_list] Limiar de dano econômico — número a partir do qual ocorrem perdas produtivas mensuráveis.
+actionRay	float64	[pest_details] Raio de ação da armadilha em metros.
+alert	int	[pest_details] Limiar de alerta (equivalente a MIIP_PEST_ALERT).
+classification	string	[pest_details] Classificação taxonômica.
+control	int	[pest_details] Limiar de controle (equivalente a MIIP_PEST_CONTROL).
+culture	string	[pest_details] Cultura monitorada.
+damage	int	[pest_details] Limiar de dano econômico.
+dataPest	string	[pest_details] Descrição morfológica detalhada do inseto.
+daysAdhesiveFloor	int	[pest_details] Validade do piso adesivo em dias antes de troca recomendada.
+daysPheromone	int	[pest_details] Validade do feromônio em dias antes de troca recomendada.
+detectionName	string	[pest_details] Código interno do modelo de IA para identificar a praga.
+id	int	[pest_details] ID da praga — FK para pest_list.MIIP_PEST_ID.
+namePopular	string	[pest_details] Nome popular.
+nameScientific	string	[pest_details] Nome científico.
+pheromones	string	[pest_details] Nome(s) comercial(is) do(s) feromônio(s).
+photoTime	string	[pest_details] Horário padrão de captura fotográfica (HH:MM:SS, UTC−3).
+symptoms	string	[pest_details] Sintomas, danos e impactos da praga no cultivo.
+id_imagem	string	[pest_details] IDs das imagens de referência no S3 (separados por vírgula).
+link_imagem	URL	[pest_details] URLs das imagens de referência no S3 (AWS), separadas por vírgula.
+businessUnit	int	[traps_list] ID da unidade de negócio/fazenda no sistema MIIP.
+code	string	[traps_list · traps_events] Código identificador único da armadilha.
+farm	int	[traps_list] ID da fazenda onde a armadilha está instalada.
+fridayPhoto	bool	[traps_list] Se True, captura na sexta-feira.
+mondayPhoto	bool	[traps_list] Se True, captura na segunda-feira.
+tuesdayPhoto	bool	[traps_list] Se True, captura na terça-feira.
+wednesdayPhoto	bool	[traps_list] Se True, captura na quarta-feira.
+thursdayPhoto	bool	[traps_list] Se True, captura na quinta-feira.
+saturdayPhoto	bool	[traps_list] Se True, captura no sábado.
+sundayPhoto	bool	[traps_list] Se True, captura no domingo.
+harvest	string	[traps_list · traps_data · traps_events] Safra de referência (ex: "2025/2026").
+id	int	[traps_list] ID único da armadilha — FK para traps_data.trapId e traps_events.trapId.
+installationDate	ISO 8601	[traps_list] Data/hora de instalação da armadilha no campo (UTC).
+lastDateAdhesiveFloorReplacement	ISO 8601	[traps_list] Data da última troca do piso adesivo.
+lastDatePheromoneExchange	ISO 8601	[traps_list] Data da última troca de feromônio.
+latitude	float64	[traps_list] Latitude WGS84 da posição da armadilha.
+longitude	float64	[traps_list] Longitude WGS84 da posição da armadilha.
+radius	int	[traps_list] Raio de cobertura em unidades do sistema (1 = padrão).
+requestGPS	bool	[traps_list · traps_data] Se True, a armadilha eletrônica envia coordenadas GPS a cada evento.
+status	string	[traps_list] Status cadastral da armadilha: ACTIVE (operacional) | INACTIVE (desativada).
+type	string	[traps_list] Tipo da armadilha: CONVENTIONAL (papel adesivo) | ELECTRONIC (IoT + câmera + IA).
+plot	float/str	[traps_list] ID numérico do talhão associado; nan quando não vinculada a talhão específico.
+secondPhotoTime	string	[traps_list] Horário de um segundo ciclo fotográfico diário (HH:MM:SS ou nan).
+createdAt	ISO 8601	[traps_data · traps_events] Data/hora UTC de criação do registro ou evento.
+culture	string	[traps_data] Cultura monitorada pela armadilha.
+doneMissionCount	int	[traps_data] Número de missões concluídas no período de referência.
+farmName	string	[traps_data] Nome textual da fazenda ("-" quando não preenchido).
+idBusinessUnit	int	[traps_data] ID da unidade de negócio.
+lateMissionCount	int	[traps_data] Número de missões atrasadas no período.
+pendingMissionCount	int	[traps_data] Número de missões ainda pendentes de execução.
+photoProgrammedAt	string	[traps_data] Horário programado para captura fotográfica (HH:MM:SS).
+plotName	string	[traps_data] Nome do talhão ("-" quando não associado).
+primaryPest	string	[traps_data] Praga principal monitorada pela armadilha.
+trapCode	string	[traps_data · traps_events] Código da armadilha — FK para traps_list.code.
+trapId	int	[traps_data · traps_events] ID da armadilha — FK para traps_list.id.
+trapInfestationLevel	string	[traps_data] Nível de infestação: LOW | ALERT | DAMAGE | "-".
+trapStatus	string	[traps_data] Status operacional da armadilha no período: ACTIVE | INACTIVE.
+trapType	string	[traps_data] Tipo da armadilha: CONVENTIONAL | ELECTRONIC.
+data	string/URL	[traps_events] URL S3 da imagem capturada ou valor numérico do sensor.
+detection	JSON	[traps_events] Array JSON com bounding boxes por inseto detectado pelo modelo de IA.
+farm	int	[traps_events] ID da fazenda onde a armadilha está instalada.
+pestCount	int	[traps_events] Número total de pragas detectadas pelo modelo de IA neste evento.
+type	string	[traps_events] Tipo do evento: IMAGE | PING | CLIENT_BATTERY_VOLTAGE.
+
+Arquivos
+Arquivo	Formato	Descrição
+sample_points.csv	CSV	Pontos amostrais com coordenadas GPS e resultados analíticos completos (40 registros, 66 colunas)
+recommendations.csv	CSV	Prescrições de adubação e calcário por zona de manejo (6 registros, 21 colunas)
+zones.csv	CSV	Zonas de manejo com centroide e resultados analíticos agregados (6 registros, 63 colunas)
+Acesso restrito. Faça login no OneDrive com e-mail @unimar.br. Acessar via OneDrive ↗
+Schema de colunas
+Coluna	Tipo	Descrição
+request_id	int	ID da solicitação Cropman — FK que une os 3 arquivos (sample_points · recommendations · zones)
+talhao	string	Nome do talhão monitorado
+fazenda	string	Nome da fazenda
+grupo	string	Organização/grupo associado à análise
+status	string	Status da análise (ex: "Finalizada – Resultados Disponíveis")
+dono_nome	string	Nome do responsável pela solicitação
+dono_email	string	E-mail do responsável
+criado_em	string	Data/hora de criação da solicitação (ISO 8601 UTC)
+atualizado_em	string	Data/hora da última atualização (ISO 8601 UTC)
+id_zona	int	ID da zona de manejo — FK para zones.csv
+sample_id	int	[sample_points] ID único do ponto amostral
+lat	float	[sample_points] Latitude WGS84 do ponto amostral
+lon	float	[sample_points] Longitude WGS84 do ponto amostral
+arquivo	string	[sample_points] URL do arquivo ZIP com dados completos no portal Cropman
+tipo_layer	int	[sample_points] Tipo de layer (1 = ponto amostral)
+centroide_lat	float	[zones] Latitude WGS84 do centroide da zona de manejo
+centroide_lon	float	[zones] Longitude WGS84 do centroide da zona de manejo
+argila	float	Teor de argila (%)
+areia	float	Teor de areia (%)
+silte	float	Teor de silte (%)
+mo	float	Matéria orgânica — leitura 1 (%)
+mo_2	float	Matéria orgânica — leitura 2 (%)
+c	float	Carbono orgânico total — leitura 1 (%)
+c_2	float	Carbono orgânico total — leitura 2 (%)
+phcacl2	float	pH em CaCl₂ — leitura 1
+phcacl2_2	float	pH em CaCl₂ — leitura 2
+phh2o	float	pH em H₂O — leitura 1
+phh2o_2	float	pH em H₂O — leitura 2
+ctc	float	Capacidade de Troca Catiônica total — leitura 1 (mmolc/dm³)
+ctc_2	float	Capacidade de Troca Catiônica total — leitura 2 (mmolc/dm³)
+ctce	float	CTC efetiva — leitura 1 (mmolc/dm³)
+ctce_2	float	CTC efetiva — leitura 2 (mmolc/dm³)
+ctca	float	CTC a pH 7 — leitura 1 (mmolc/dm³)
+ctca_2	float	CTC a pH 7 — leitura 2 (mmolc/dm³)
+ca	float	Cálcio trocável — leitura 1 (mmolc/dm³)
+ca_2	float	Cálcio trocável — leitura 2 (mmolc/dm³)
+mg	float	Magnésio trocável — leitura 1 (mmolc/dm³)
+mg_2	float	Magnésio trocável — leitura 2 (mmolc/dm³)
+k	float	Potássio trocável — leitura 1 (mmolc/dm³)
+k_2	float	Potássio trocável — leitura 2 (mmolc/dm³)
+p	float	Fósforo resina — leitura 1 (mg/dm³)
+p_2	float	Fósforo resina — leitura 2 (mg/dm³)
+s	float	Enxofre — leitura 1 (mg/dm³)
+s_2	float	Enxofre — leitura 2 (mg/dm³)
+satca	float	Saturação de cálcio — leitura 1 (%)
+satca_2	float	Saturação de cálcio — leitura 2 (%)
+satmg	float	Saturação de magnésio — leitura 1 (%)
+satmg_2	float	Saturação de magnésio — leitura 2 (%)
+satk	float	Saturação de potássio — leitura 1 (%)
+satk_2	float	Saturação de potássio — leitura 2 (%)
+satb	float	Saturação de bases total — leitura 1 (%)
+satb_2	float	Saturação de bases total — leitura 2 (%)
+satal	float	Saturação de alumínio — leitura 1 (%)
+satal_2	float	Saturação de alumínio — leitura 2 (%)
+al	float	Alumínio trocável — leitura 1 (mmolc/dm³)
+al_2	float	Alumínio trocável — leitura 2 (mmolc/dm³)
+hal	float	Hidrogênio + Alumínio (acidez potencial) — leitura 1 (mmolc/dm³)
+hal_2	float	Hidrogênio + Alumínio (acidez potencial) — leitura 2 (mmolc/dm³)
+sb	float	Soma de bases — leitura 1 (mmolc/dm³)
+sb_2	float	Soma de bases — leitura 2 (mmolc/dm³)
+b	float	Boro (mg/dm³)
+zn	float	Zinco (mg/dm³)
+mn	float	Manganês (mg/dm³)
+cu	float	Cobre (mg/dm³)
+fe	float	Ferro (mg/dm³)
+dif	float	Campo reservado — diferença entre leituras (pode ser nulo)
+ninfas	float	Contagem de ninfas de pragas de solo (vazio na amostra atual)
+nemat	float	Contagem de nematóides (vazio na amostra atual)
+ad	float	[recommendations] Adubação de manutenção (kg/ha)
+nc	float	[recommendations] Necessidade de calcário (kg/ha)
+ng	float	[recommendations] Necessidade de gesso (kg/ha)
+nk	float	[recommendations] Necessidade de K₂O (kg/ha)
+nn	float	[recommendations] Necessidade de N (kg/ha)
+np	float	[recommendations] Necessidade de P₂O₅ (kg/ha)
+ns	float	[recommendations] Necessidade de S (kg/ha)
+kcl	float	[recommendations] KCl recomendado (kg/ha)
+map	float	[recommendations] MAP recomendado (kg/ha)
+semilho	float	[recommendations] Densidade de sementes de milho (grãos/ha)
+semilho_aj	float	[recommendations] Densidade de sementes de milho ajustada (grãos/ha)
+
+Arquivos
+Arquivo	Formato	Descrição
+ndvi/	GeoTIFF	196 imagens NDVI (4 talhões × 49 datas) — padrão: ndvi_raw_{season_id}_{data}.tiff · 3 bandas · EPSG:3857
+images/	JPEG	196 previews RGB do NDVI para visualização rápida — padrão: ndvi_raw_{season_id}_{data}.jpg
+ndvi_metadata.csv	CSV	Estatísticas raster de cada imagem TIFF: 196 registros, 75 colunas
+Acesso restrito. Faça login no OneDrive com e-mail @unimar.br. Acessar via OneDrive ↗
+Schema de colunas
+Coluna	Tipo	Descrição
+Banda 1 — NDVI	float64	Índice NDVI do pixel (escala −1 a 1). Nodata = imagem nublada ou sem cobertura para a data
+Banda 2 — Qualidade	float64	Máscara de qualidade / confiança (0 = pixel válido)
+Banda 3 — Máscara talhão	float64	Máscara estática de cobertura do talhão — delimita a área agrícola monitorada (binário: 0/1, fixo por talhão)
+filename	string	Nome do arquivo TIFF — padrão: ndvi_raw_{season_id}_{data}.tiff
+season_id	string	UUID do talhão. 0bf86c8b = Silagem Convencional · 258e47e0 = Grão 4.0 · b7292cb8 = Grão Convencional · f791bf13 = Silagem 4.0
+driver	string	Formato do raster (GTiff)
+dtype	string	Tipo de dado dos pixels (float64)
+nodata	float	Valor de nodata explícito. Vazio = sem nodata declarado; imagens nubladas têm b1_valid_pixels = 0
+width	int	Largura da imagem em pixels (54 px)
+height	int	Altura da imagem em pixels (40 px)
+count	int	Número de bandas (3)
+crs	string	Sistema de referência coordenada (EPSG:3857 — Web Mercator)
+bounds_left	float	Coordenada oeste da bounding box em metros (EPSG:3857)
+bounds_bottom	float	Coordenada sul da bounding box em metros (EPSG:3857)
+bounds_right	float	Coordenada leste da bounding box em metros (EPSG:3857)
+bounds_top	float	Coordenada norte da bounding box em metros (EPSG:3857)
+res_x	float	Resolução espacial em X (~10.7 m/pixel, EPSG:3857)
+res_y	float	Resolução espacial em Y (~10.8 m/pixel, EPSG:3857)
+b1_total_pixels	int	[b1-NDVI] Total de pixels da banda
+b1_valid_pixels	int	[b1-NDVI] Pixels com valor válido. 0 = imagem completamente nublada
+b1_nodata_pixels	int	[b1-NDVI] Pixels sem dado (nublado ou fora da área)
+b1_min	float	[b1-NDVI] Valor NDVI mínimo na imagem. Vazio se todos os pixels forem nodata
+b1_max	float	[b1-NDVI] Valor NDVI máximo na imagem
+b1_mean	float	[b1-NDVI] NDVI médio — indicador geral de saúde vegetal do talhão na data
+b1_median	float	[b1-NDVI] Mediana do NDVI — menos sensível a outliers que a média
+b1_std	float	[b1-NDVI] Desvio padrão do NDVI — indica heterogeneidade espacial do talhão
+b1_count_agua	int	[b1-NDVI] Pixels classificados como água (NDVI < 0)
+b1_pct_agua	float	[b1-NDVI] Proporção de pixels água (%)
+b1_count_solo	int	[b1-NDVI] Pixels classificados como solo exposto (NDVI ~0–0.2)
+b1_pct_solo	float	[b1-NDVI] Proporção de pixels solo exposto (%)
+b1_count_veg_baixa	int	[b1-NDVI] Pixels com vegetação baixa/inicial (NDVI ~0.2–0.4)
+b1_pct_veg_baixa	float	[b1-NDVI] Proporção vegetação baixa (%)
+b1_count_veg_mod	int	[b1-NDVI] Pixels com vegetação moderada em desenvolvimento (NDVI ~0.4–0.6)
+b1_pct_veg_mod	float	[b1-NDVI] Proporção vegetação moderada (%)
+b1_count_veg_alta	int	[b1-NDVI] Pixels com vegetação bem desenvolvida (NDVI ~0.6–0.8)
+b1_pct_veg_alta	float	[b1-NDVI] Proporção vegetação alta (%)
+b1_count_veg_densa	int	[b1-NDVI] Pixels com cobertura vegetal máxima/densa (NDVI > 0.8)
+b1_pct_veg_densa	float	[b1-NDVI] Proporção vegetação densa (%)
+b2_total_pixels	int	[b2-Qualidade] Total de pixels da banda de qualidade
+b2_valid_pixels	int	[b2-Qualidade] Pixels com valor válido
+b2_nodata_pixels	int	[b2-Qualidade] Pixels sem dado na banda de qualidade
+b2_min	float	[b2-Qualidade] Valor mínimo da máscara (0 = pixel válido)
+b2_max	float	[b2-Qualidade] Valor máximo da máscara
+b2_mean	float	[b2-Qualidade] Média da máscara de qualidade
+b2_median	float	[b2-Qualidade] Mediana da máscara de qualidade
+b2_std	float	[b2-Qualidade] Desvio padrão da máscara de qualidade
+b2_count_agua	int	[b2-Qualidade] Pixels classificados como água na máscara de qualidade
+b2_pct_agua	float	[b2-Qualidade] Proporção água na máscara (%)
+b2_count_solo	int	[b2-Qualidade] Pixels sem interferência na máscara de qualidade
+b2_pct_solo	float	[b2-Qualidade] Proporção pixels sem interferência (%)
+b2_count_veg_baixa	int	[b2-Qualidade] Pixels veg. baixa na máscara de qualidade
+b2_pct_veg_baixa	float	[b2-Qualidade] Proporção veg. baixa na máscara (%)
+b2_count_veg_mod	int	[b2-Qualidade] Pixels veg. moderada na máscara de qualidade
+b2_pct_veg_mod	float	[b2-Qualidade] Proporção veg. moderada na máscara (%)
+b2_count_veg_alta	int	[b2-Qualidade] Pixels veg. alta na máscara de qualidade
+b2_pct_veg_alta	float	[b2-Qualidade] Proporção veg. alta na máscara (%)
+b2_count_veg_densa	int	[b2-Qualidade] Pixels veg. densa na máscara de qualidade
+b2_pct_veg_densa	float	[b2-Qualidade] Proporção veg. densa na máscara (%)
+b3_total_pixels	int	[b3-Talhão] Total de pixels — valor idêntico entre datas para o mesmo talhão
+b3_valid_pixels	int	[b3-Talhão] Pixels válidos na máscara do talhão
+b3_nodata_pixels	int	[b3-Talhão] Pixels sem dado na máscara do talhão
+b3_min	float	[b3-Talhão] Valor mínimo da máscara (0 = fora do polígono do talhão)
+b3_max	float	[b3-Talhão] Valor máximo da máscara (1 = dentro do polígono do talhão)
+b3_mean	float	[b3-Talhão] Proporção média da área coberta pelo talhão
+b3_median	float	[b3-Talhão] Mediana da máscara do talhão
+b3_std	float	[b3-Talhão] Desvio padrão da máscara (indica heterogeneidade na borda do talhão)
+b3_count_agua	int	[b3-Talhão] Pixels externos ao polígono classificados como água
+b3_pct_agua	float	[b3-Talhão] Proporção área água na máscara (%)
+b3_count_solo	int	[b3-Talhão] Pixels externos ao talhão (valor 0)
+b3_pct_solo	float	[b3-Talhão] Proporção de pixels externos ao talhão (%)
+b3_count_veg_baixa	int	[b3-Talhão] Pixels de borda/transição na máscara do talhão
+b3_pct_veg_baixa	float	[b3-Talhão] Proporção de pixels de borda (%)
+b3_count_veg_mod	int	[b3-Talhão] Pixels com valor moderado na máscara do talhão
+b3_pct_veg_mod	float	[b3-Talhão] Proporção (%)
+b3_count_veg_alta	int	[b3-Talhão] Pixels com valor alto na máscara do talhão
+b3_pct_veg_alta	float	[b3-Talhão] Proporção (%)
+b3_count_veg_densa	int	[b3-Talhão] Pixels internos ao talhão (valor 1) — área agrícola monitorada
+b3_pct_veg_densa	float	[b3-Talhão] Proporção da área interna do talhão (%)
+
+Arquivos
+Arquivo	Formato	Descrição
+Relatório Horário de 01-11-2025 - 25-02-2026 - GMT - 03h00.csv	CSV	Dados horários — 01/Nov/2025 a 25/Fev/2026 · 2.785 registros · 15 colunas · GMT−03:00
+Acesso restrito. Faça login no OneDrive com e-mail @unimar.br. Acessar via OneDrive ↗
+Schema de colunas
+Coluna	Tipo	Descrição
+Data	string	Timestamp horário — formato "DD/MM/YYYY - HH:MM / GMT - 03:00"
+Estação	string	Nome e ID da estação — valor fixo: "Unimar Pesquisa (0020ED51)"
+Latitude	float	Latitude decimal da estação (separador decimal: vírgula) — −22,2476
+Longitude	float	Longitude decimal da estação (separador decimal: vírgula) — −49,9764
+Radiação Solar (W/m2)	float	Radiação solar global incidente no intervalo horário (W/m²) — 0 durante a noite
+Precipitação (mm)	float	Precipitação acumulada no intervalo horário (mm)
+Vel do Vento Média (km/h)	float	Velocidade média do vento no intervalo horário (km/h)
+Temp. Mínima (°C)	float	Temperatura mínima registrada dentro da hora (°C)
+Temp. Média (°C)	float	Temperatura média horária (°C)
+Temp. Máxima (°C)	float	Temperatura máxima registrada dentro da hora (°C)
+Umidade Rel. Mín. (%)	float	Umidade relativa mínima da hora (%)
+Umidade Rel. Média (%)	float	Umidade relativa média da hora (%)
+Umidade Rel. Máxima (%)	float	Umidade relativa máxima da hora (%)
+Rajada de Vento (km/h)	float	Velocidade máxima de rajada de vento na hora (km/h)
+Evapotranspiração (mm)	float	Evapotranspiração no intervalo horário — pode ser vazio em horas noturnas ou com radiação insuficiente (mm)
